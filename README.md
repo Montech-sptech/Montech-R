@@ -1,14 +1,14 @@
 # Montech-R
 # ✈️ Validação de Dashboard AWS
 
-Este repositório contém um script em R desenvolvido para analisar e validar os dados brutos de telemetria de servidores hospedados na AWS. O objetivo principal do projeto é comprovar matematicamente que o dashboard calcula e exibe corretamente indicadores de carga, desempenho e limites de operação sob diferentes condições de utilização.
+Este repositório contém um script em R desenvolvido para analisar e validar os dados brutos de telemetria de servidores hospedados na AWS. O objetivo principal do projeto é comprovar matematicamente e visualmente que o dashboard calcula e exibe corretamente indicadores de carga, desempenho e limites de operação sob diferentes condições de utilização.
 
 ## 🎯 Objetivos do Projeto
 
-*   **Comprovação de Dados:** Extrair médias e picos de recortes específicos de tempo (ex: janelas de 5 minutos) para garantir que a dashboard calcula e exibe as informações corretamente.
-*   **Análise de Estresse:** Identificar os limites máximos absolutos alcançados por cada servidor em termos de CPU, RAM e Disco, quantificando quantas vezes a operação entrou em estado de "Alta Demanda" ou "Crítico".
-*   **Análise de Sazonalidade:** Simular e estruturar a comparação de carga nos servidores entre dias úteis convencionais e períodos de alta demanda, como feriados e finais de semana.
-*   **Visualização Gráfica:** Gerar evidências visuais claras do comportamento dos recursos computacionais ao longo do tempo.
+*   **Comprovação de Dados:** Extrair médias e picos de recortes de tempo contínuos para garantir que a dashboard processa a volumetria corretamente.
+*   **Análise de Estresse e Picos:** Identificar os limites absolutos alcançados por cada servidor, comprovando os picos de tráfego nos horários de maior movimento (manhã e noite) e monitorando os marcos de **Atenção (60%)** e **Crítico (80%)**.
+*   **Análise de Sazonalidade:** Comparar a carga nos servidores entre dias úteis convencionais e períodos de alta demanda (feriados), evidenciando a necessidade de escalabilidade da infraestrutura.
+*   **Visualização Gráfica:** Gerar evidências visuais claras do comportamento dos recursos computacionais ao longo das 24 horas.
 
 ## 🛠️ Tecnologias Utilizadas
 
@@ -20,11 +20,21 @@ O projeto foi desenvolvido inteiramente em **R**, utilizando pacotes modernos pa
 
 ## 📊 Resultados e Visualizações
 
-Um dos principais entregáveis do script é a geração de gráficos comprobatórios. O gráfico gerado ilustra o uso de CPU do servidor ao longo do recorte de tempo analisado. 
+Os principais entregáveis do script são as visualizações gráficas que comprovam o comportamento da infraestrutura sob diferentes níveis de estresse.
 
-Como podemos observar no resultado abaixo, o script plota a curva de processamento e traça uma linha vermelha tracejada no marco de 90%, que representa o limite crítico de operação. Durante o período analisado (20:30 às 20:45), houve um pico de processamento por volta das 20:33, mas o uso geral se manteve seguro e abaixo da margem crítica de falha.
+### 1. Comportamento Diário e Picos de Operação
+O primeiro gráfico ilustra o uso de CPU do servidor ao longo de 24 horas[cite: 10]. É possível observar claramente dois momentos de pico de tráfego que ultrapassam a linha de **Atenção (laranja tracejada em 60%)**[cite: 10]:
+*   **Pico da Manhã (06h às 10h):** Impulsionado pelo início da malha diária.
+*   **Pico da Noite (18h às 21h):** Marcado pelo retorno de viagens e encerramento do dia comercial.
 
-![Gráfico de CPU](71c6629e-b281-4e2a-acb5-9d226f51700d.png)
+![Comportamento da CPU em 24 Horas](img.jpeg)
+
+### 2. Impacto Sazonal: Dia Normal vs Feriado
+Para analisar a capacidade de resiliência da arquitetura, o script gera um comparativo lado a lado entre um dia normal de operação e um feriado[cite: 11]. 
+
+A visualização comprova que, durante o feriado, a carga basal do servidor é significativamente mais alta[cite: 11]. Os picos de processamento não apenas ultrapassam a linha de atenção com mais frequência, como também atingem e rompem repetidamente a **linha Crítica (vermelha tracejada em 80%)**, demonstrando o estresse severo da máquina[cite: 11].
+
+![Comparativo de Estresse: Dia Normal vs Feriado](img2.jpeg)
 
 ## 🚀 Como executar o projeto
 
@@ -37,7 +47,7 @@ Como podemos observar no resultado abaixo, o script plota a curva de processamen
 
 **Passo a passo:**
 1. Clone este repositório para a sua máquina local.
-2. Certifique-se de que o arquivo de dados bruto CSV está na mesma pasta/diretório em que o RStudio está operando.
+2. Certifique-se de que os arquivos de dados brutos CSV (ex: dia normal e feriado) estão na mesma pasta/diretório em que o RStudio está operando e que as imagens `img.jpeg` e `img2.jpeg` estão na raiz do projeto.
 3. Abra o script `.R` no RStudio.
 4. Selecione todo o código e clique em **Run** (ou pressione `Ctrl + Enter`).
-5. Os resultados das sumarizações aparecerão no console e o gráfico comprobatório será gerado na aba **Plots** do RStudio.
+5. Os resultados das sumarizações estatísticas aparecerão no console e os gráficos comprobatórios serão gerados na aba **Plots** do RStudio.

@@ -1,103 +1,92 @@
 # ==============================================================================
-# SCRIPT DE VALIDAÇÃO DE DADOS DA DASHBOARD - AWS
-# Bibliotecas focadas: dplyr (manipulação) e ggplot2 (visualização)
+# SCRIPT DE VALIDAÇÃO: DIA NORMAL VS FERIADO
 # ==============================================================================
 
-# 1. Carregando as bibliotecas separadamente
 library(dplyr)
 library(ggplot2)
-library(readr)     # Para ler o CSV
-library(lubridate) # Para tratar as datas e horas
+library(readr)
+library(lubridate)
 
-# 2. Lendo os dados brutos da AWS
-csv <- "3b12f1df-5232-4df4-8d48-64a938c2-2026-10-19.csv"
-# read_delim com delim = ";" já que seu arquivo usa ponto e vírgula
-dados_aws <- read_delim(csv, delim = ";", show_col_types = FALSE)
+# 1. Lendo os dois arquivos CSVs
+arquivo_normal <- "3b12f1df-5232-4df4-8d48-64a938c2-2026-10-19.csv"
+arquivo_feriado <- "3b12f1df-5232-4df4-8d48-64a938c2-2026-10-20_19-46-06.csv"
 
-# 3. Preparando as colunas de tempo com dplyr (mutate)
+# Carregando e criando uma coluna para identificar quem é quem
+dados_normal <- read_delim(arquivo_normal, delim = ";", show_col_types = FALSE) %>%
+  mutate(Cenario = "1. Dia Normal")
+
+dados_feriado <- read_delim(arquivo_feriado, delim = ";", show_col_types = FALSE) %>%
+  mutate(Cenario = "2. Feriado")
+
+# 2. Juntando os dois arquivos em uma tabela só
+dados_aws <- bind_rows(dados_normal, dados_feriado)
+
+# 3. Tratamento de tempo (Extraindo só a hora para alinhar os gráficos)
 dados_aws <- dados_aws %>%
   mutate(
-    TimeStamp = ymd_hms(TimeStamp),
-    Data = as_date(TimeStamp),
-    Hora = format(TimeStamp, "%H:%M:%S")
+    Hora = format(ymd_hms(TimeStamp), "%H:%M:%S"),
+    Hora_Plot = as.POSIXct(Hora, format = "%H:%M:%S") # Necessário para o eixo X do gráfico
   )
 
 # ==============================================================================
-# ETAPA A: COMPROVAÇÃO DA DASHBOARD (Usando dplyr)
+# COMPARAÇÃO MATEMÁTICA DOS CENÁRIOS
 # ==============================================================================
-cat("\n--- ETAPA A: COMPROVAÇÃO DA DASH (Recorte de 5 minutos) ---\n")
+cat("\n--- COMPARAÇÃO: DIA NORMAL VS FERIADO ---\n")
 
-comprovacao_dash <- dados_aws %>%
-  filter(Hora >= "20:30:00" & Hora <= "20:35:00") %>% 
-  summarise(
-    CPU_Uso_Atual = last(UsoCPU_Geral),
-    CPU_Media_5min = mean(UsoCPU_Geral, na.rm = TRUE),
-    CPU_Pico_5min = max(UsoCPU_Geral, na.rm = TRUE),
-    RAM_Media_5min = mean(UsoRAM, na.rm = TRUE),
-    Disco_Ocupado = last(UsoDisco)
-  )
-
-print(comprovacao_dash)
-
-# ==============================================================================
-# ETAPA B: ANÁLISE DE PICOS E LIMITES (Usando dplyr)
-# ==============================================================================
-cat("\n--- ETAPA B: PICOS E GARGALOS NA OPERAÇÃO ---\n")
-
-picos_operacao <- dados_aws %>%
-  summarise(
-    Max_CPU = max(UsoCPU_Geral, na.rm = TRUE),
-    Max_RAM = max(UsoRAM, na.rm = TRUE),
-    Max_Disco = max(UsoDisco, na.rm = TRUE),
-    Vezes_CPU_Critica = sum(UsoCPU_Geral >= 90, na.rm = TRUE)
-  )
-
-print(picos_operacao)
-
-# ==============================================================================
-# ETAPA C: DIAS NORMAIS VS FERIADOS (Usando dplyr)
-# ==============================================================================
-cat("\n--- ETAPA C: IMPACTO SAZONAL ---\n")
-
-# Definindo alguns feriados como exemplo
-datas_feriados <- as_date(c("2026-09-07", "2026-10-12", "2026-11-02", "2026-12-25"))
-
-comparacao_sazonal <- dados_aws %>%
-  mutate(
-    Tipo_Dia = case_when(
-      Data %in% datas_feriados ~ "Feriado",
-      wday(Data) %in% c(1, 7) ~ "Fim de Semana",
-      TRUE ~ "Dia Normal"
-    )
-  ) %>%
-  group_by(Tipo_Dia) %>%
+comparacao <- dados_aws %>%
+  group_by(Cenario) %>%
   summarise(
     Media_CPU = mean(UsoCPU_Geral, na.rm = TRUE),
-    Pico_CPU = max(UsoCPU_Geral, na.rm = TRUE),
-    Total_Leituras = n()
-  ) %>%
-  arrange(desc(Pico_CPU))
+    Pico_Maximo = max(UsoCPU_Geral, na.rm = TRUE),
+    Vezes_Em_Atencao = sum(UsoCPU_Geral >= 60 & UsoCPU_Geral < 80, na.rm = TRUE),
+    Vezes_Em_Critico = sum(UsoCPU_Geral >= 80, na.rm = TRUE)
+  )
 
-print(comparacao_sazonal)
+print(comparacao)
 
 # ==============================================================================
-# ETAPA D: VISUALIZAÇÃO GRÁFICA DA CPU (Usando ggplot2)
+# VISUALIZAÇÃO GRÁFICA COMPARATIVA LADO A LADO
 # ==============================================================================
-grafico_validacao <- dados_aws %>%
-  ggplot(aes(x = TimeStamp, y = UsoCPU_Geral)) +
-  geom_line(color = "#2b8cbe", size = 1) +
-  geom_hline(yintercept = 90, color = "#de2d26", linetype = "dashed", size = 1) +
+
+grafico_comparativo <- dados_aws %>%
+  ggplot(aes(x = Hora_Plot, y = UsoCPU_Geral, color = Cenario)) +
+  geom_line(size = 0.8) +
+  
+  # LINHAS DE MARCAÇÃO
+  geom_hline(yintercept = 60, color = "#FFA500", linetype = "dashed", size = 1) + # Atenção
+  geom_hline(yintercept = 80, color = "#de2d26", linetype = "dashed", size = 1) + # Crítico
+  
+  # SEPARA O GRÁFICO EM DOIS QUADROS LADO A LADO (Dia Normal x Feriado)
+  facet_wrap(~ Cenario) + 
+  
   labs(
-    title = "Comprovação da Dashboard: Uso de CPU",
-    subtitle = "Linha tracejada vermelha representa o limite crítico (90%)",
-    x = "Tempo",
+    title = "Comparativo de Estresse da CPU: Dia Normal vs Feriado",
+    subtitle = "Linha Laranja: Atenção (60%) | Linha Vermelha: Crítico (80%)",
+    x = "Horário da Operação",
     y = "Uso de CPU (%)"
   ) +
+  scale_y_continuous(limits = c(0, 100)) +
+  scale_x_datetime(date_labels = "%H:%M") + # Formata o eixo X para mostrar só as horas
   theme_minimal() +
   theme(
     plot.title = element_text(face = "bold", size = 14),
-    axis.text = element_text(size = 10)
+    legend.position = "none", # Tira a legenda lateral pois os quadros já têm título
+    strip.text = element_text(size = 12, face = "bold") # Tamanho do título de cada quadro
   )
 
-print(grafico_validacao)
+print(grafico_comparativo)
 
+# ==============================================================================
+# IMPACTO DO FERIADO NA INFRAESTRUTURA
+# ==============================================================================
+# Com base nos dados simulados, o aumento no feriado reflete-se em:
+#
+# 1. Aumento no Uso Médio Diário: 
+#    A média de uso da CPU passa de 53,46% (dia normal) para 68,68% (feriado). 
+#    Isto representa um aumento de 28,47% na carga global diária do servidor.
+#
+# 2. Aumento no Pico Máximo: 
+#    O pico absoluto de stress sobe de 82,50% (dia normal) para 93,20% (feriado). 
+#    Isto representa um salto de 12,97% no limite de processamento, forçando 
+#    o servidor a operar na zona crítica de falha (acima dos 90%).
+# ==============================================================================

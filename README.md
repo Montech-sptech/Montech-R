@@ -1,16 +1,10 @@
-# Montech-R
-# ✈️ Validação de Dashboard AWS
+# Montech-R ✈️✈️
+# Validação de Dashboard AWS
 
 Este repositório contém um script em R desenvolvido para analisar e validar os dados brutos de telemetria de servidores hospedados na AWS. O objetivo principal do projeto é comprovar matematicamente e visualmente que o dashboard calcula e exibe corretamente indicadores de carga, desempenho e limites de operação sob diferentes condições de utilização.
 
-## 🎯 Objetivos do Projeto
 
-*   **Comprovação de Dados:** Extrair médias e picos de recortes de tempo contínuos para garantir que a dashboard processa a volumetria corretamente.
-*   **Análise de Estresse e Picos:** Identificar os limites absolutos alcançados por cada servidor, comprovando os picos de tráfego nos horários de maior movimento (manhã e noite) e monitorando os marcos de **Atenção (60%)** e **Crítico (80%)**.
-*   **Análise de Sazonalidade:** Comparar a carga nos servidores entre dias úteis convencionais e períodos de alta demanda (feriados), evidenciando a necessidade de escalabilidade da infraestrutura.
-*   **Visualização Gráfica:** Gerar evidências visuais claras do comportamento dos recursos computacionais ao longo das 24 horas.
-
-## 🛠️ Tecnologias Utilizadas
+## Tecnologias Utilizadas
 
 O projeto foi desenvolvido inteiramente em **R**, utilizando pacotes modernos para manipulação de dados e geração de gráficos:
 *   `dplyr`: Para manipulação de dados, agrupamentos, filtros e sumarizações de forma limpa e otimizada.
@@ -18,25 +12,25 @@ O projeto foi desenvolvido inteiramente em **R**, utilizando pacotes modernos pa
 *   `lubridate`: Para o tratamento e conversão eficiente de datas e séries temporais (`TimeStamp`).
 *   `readr`: Para a importação rápida e segura de arquivos CSV.
 
-## 📊 Resultados e Visualizações
+## Resultados e Visualizações
 
 Os principais entregáveis do script são as visualizações gráficas que comprovam o comportamento da infraestrutura sob diferentes níveis de estresse.
 
 ### 1. Comportamento Diário e Picos de Operação
-O primeiro gráfico ilustra o uso de CPU do servidor ao longo de 24 horas[cite: 10]. É possível observar claramente dois momentos de pico de tráfego que ultrapassam a linha de **Atenção (laranja tracejada em 60%)**[cite: 10]:
+O primeiro gráfico ilustra o uso de CPU do servidor ao longo de 24 horas. É possível observar claramente dois momentos de pico de tráfego que ultrapassam a linha de **Atenção (laranja tracejada em 60%)**
 *   **Pico da Manhã (06h às 10h):** Impulsionado pelo início da malha diária.
 *   **Pico da Noite (18h às 21h):** Marcado pelo retorno de viagens e encerramento do dia comercial.
 
 ![Comportamento da CPU em 24 Horas](img.jpeg)
 
 ### 2. Impacto Sazonal: Dia Normal vs Feriado
-Para analisar a capacidade de resiliência da arquitetura, o script gera um comparativo lado a lado entre um dia normal de operação e um feriado[cite: 11]. 
+Para analisar a capacidade de resiliência da arquitetura, o script gera um comparativo lado a lado entre um dia normal de operação e um feriado. 
 
-A visualização comprova que, durante o feriado, a carga basal do servidor é significativamente mais alta[cite: 11]. Os picos de processamento não apenas ultrapassam a linha de atenção com mais frequência, como também atingem e rompem repetidamente a **linha Crítica (vermelha tracejada em 80%)**, demonstrando o estresse severo da máquina[cite: 11].
+A visualização comprova que, durante o feriado, a carga basal do servidor é significativamente mais alta. Os picos de processamento não apenas ultrapassam a linha de atenção com mais frequência, como também atingem e rompem repetidamente a **linha Crítica (vermelha tracejada em 80%)**, demonstrando o estresse severo da máquina.
 
 ![Comparativo de Estresse: Dia Normal vs Feriado](img2.jpeg)
 
-## 🚀 Como executar o projeto
+## Como executar o projeto
 
 **Pré-requisitos:**
 *   R e RStudio instalados.

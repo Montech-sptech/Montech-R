@@ -1,12 +1,12 @@
 # Montech-R
 # ✈️ Validação de Dashboard AWS
 
-Este repositório contém um script em R desenvolvido para analisar e validar os dados brutos de telemetria de servidores hospedados na AWS. O objetivo principal do projeto é comprovar matematicamente e visualmente se as métricas apresentadas na dashboard de monitoramento refletem a realidade operacional, além de identificar gargalos na infraestrutura.
+Este repositório contém um script em R desenvolvido para analisar e validar os dados brutos de telemetria de servidores hospedados na AWS. O objetivo principal do projeto é comprovar matematicamente que o dashboard calcula e exibe corretamente indicadores de carga, desempenho e limites de operação sob diferentes condições de utilização.
 
 ## 🎯 Objetivos do Projeto
 
 *   **Comprovação de Dados:** Extrair médias e picos de recortes específicos de tempo (ex: janelas de 5 minutos) para garantir que a dashboard calcula e exibe as informações corretamente.
-*   **Análise de Estresse:** Identificar os limites máximos absolutos alcançados por cada servidor em termos de CPU, RAM e Disco, quantificando quantas vezes a operação entrou em estado de "Atenção" ou "Crítico".
+*   **Análise de Estresse:** Identificar os limites máximos absolutos alcançados por cada servidor em termos de CPU, RAM e Disco, quantificando quantas vezes a operação entrou em estado de "Alta Demanda" ou "Crítico".
 *   **Análise de Sazonalidade:** Simular e estruturar a comparação de carga nos servidores entre dias úteis convencionais e períodos de alta demanda, como feriados e finais de semana.
 *   **Visualização Gráfica:** Gerar evidências visuais claras do comportamento dos recursos computacionais ao longo do tempo.
 
@@ -24,7 +24,7 @@ Um dos principais entregáveis do script é a geração de gráficos comprobató
 
 Como podemos observar no resultado abaixo, o script plota a curva de processamento e traça uma linha vermelha tracejada no marco de 90%, que representa o limite crítico de operação. Durante o período analisado (20:30 às 20:45), houve um pico de processamento por volta das 20:33, mas o uso geral se manteve seguro e abaixo da margem crítica de falha.
 
-![Gráfico de CPU](grafico_cpu.png)
+![Gráfico de CPU](71c6629e-b281-4e2a-acb5-9d226f51700d.png)
 
 ## 🚀 Como executar o projeto
 

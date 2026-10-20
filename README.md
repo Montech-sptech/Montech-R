@@ -24,7 +24,7 @@ Um dos principais entregáveis do script é a geração de gráficos comprobató
 
 Como podemos observar no resultado abaixo, o script plota a curva de processamento e traça uma linha vermelha tracejada no marco de 90%, que representa o limite crítico de operação. Durante o período analisado (20:30 às 20:45), houve um pico de processamento por volta das 20:33, mas o uso geral se manteve seguro e abaixo da margem crítica de falha.
 
-![Gráfico de CPU](71c6629e-b281-4e2a-acb5-9d226f51700d.png)
+![Gráfico de CPU](grafico_cpu.png)
 
 ## 🚀 Como executar o projeto
 

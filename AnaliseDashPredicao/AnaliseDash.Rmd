@@ -1,0 +1,167 @@
+---
+output:
+  pdf_document: default
+  html_document: default
+---
+# Introdução
+
+Este documento reúne a análise estatística dos componentes de hardware monitorados. A partir da matriz de correlação, foram selecionadas variáveis para construir modelos de regressão linear múltipla que estimam métricas de RAM, disco e CPU, permitindo antecipar gargalos e planejar a capacidade da infraestrutura.
+
+# Preparação dos Dados
+
+```{r preparacao}
+library(corrplot)
+
+df_componente <- read.csv2("ComponentesAtt.csv", dec = ".")
+
+df_componente$TimeStamp <- NULL
+df_componente$IdAeroporto <- NULL
+df_componente$Temperatura_CPU <- NULL
+df_componente$Swap_Out <- NULL
+df_componente$Swap_In <- NULL
+df_componente$Rede_Drop_Out <- NULL
+df_componente$Rede_Drop_In <- NULL
+df_componente$Rede_Err_Out <- NULL
+df_componente$Rede_Err_In <- NULL
+df_componente$Disco_Total <- NULL
+df_componente$RAM_Total <- NULL
+df_componente$CPU_Nucleos_Fisicos <- NULL
+df_componente$CPU_Nucleos_Logicos <- NULL
+df_componente$Swap_Total <- NULL
+df_componente$CPU_Freq_Atual <- NULL
+df_componente$UsoDisco <- NULL
+df_componente$Rede_Bytes_Enviados <- NULL
+df_componente$Rede_Pacotes_Enviados <- NULL
+df_componente$Swap_Percent <- NULL
+df_componente$RAM_Disponivel <- NULL
+df_componente$Max_RAM_Processo <- NULL
+df_componente$Disco_Livre <- NULL
+df_componente$Disco_Usado <- NULL
+df_componente$Disco_Read_Count <- NULL
+df_componente$Swap_Usado <- NULL
+df_componente$RAM_RSS_Processos <- NULL
+df_componente$Swap_Livre <- NULL
+```
+
+# Matriz de Correlação
+
+A matriz de correlação mostra a força da relação linear entre cada par de variáveis e serve de base para escolher as variáveis explicativas de cada modelo.
+
+```{r correlacao, fig.width=10, fig.height=10}
+matriz_componente <- cor(df_componente)
+
+corrplot(matriz_componente,
+         method = "color",
+         type = "lower",
+         addCoef.col = "black",
+         number.cex = 0.8,
+         tl.col = "black",
+         tl.srt = 45,
+         tl.cex = 0.9,
+         diag = FALSE
+)
+```
+
+# Regressão Linear 1: Uso de Memória RAM
+
+**O que prevê:** a quantidade de RAM em uso (`RAM_Usada`), a partir da quantidade de processos, dos bytes recebidos pela rede e do número de escritas em disco.
+
+**Utilidade da predição:** estimar quanta memória o servidor vai consumir conforme a carga de processos e o tráfego de rede aumentam, ajudando a dimensionar a RAM e a emitir alertas antes que ela se esgote.
+
+```{r modelo-ram}
+modelo_ram <- lm(RAM_Usada ~ Qtd_Processos +
+                   Rede_Bytes_Recebidos +
+                   Disco_Write_Count,
+                 data = df_componente)
+
+summary(modelo_ram)
+```
+
+# Regressão Linear 2: Volume de Dados Escritos no Disco
+
+**O que prevê:** o volume de dados escritos no disco (`Disco_Write_Bytes`), a partir da quantidade de processos e dos bytes lidos do disco.
+
+**Utilidade da predição:** antecipar a carga de escrita sobre o armazenamento, apoiando o planejamento de expansão do disco e o agendamento de rotinas pesadas, como backups, em horários de menor impacto.
+
+```{r modelo-escrita-disco}
+modelo_escrita_disco <- lm(Disco_Write_Bytes ~
+                             Qtd_Processos +
+                             Disco_Read_Bytes,
+                           data = df_componente)
+
+summary(modelo_escrita_disco)
+```
+
+# Regressão Linear 3: Interrupções na CPU
+
+**O que prevê:** o número de interrupções na CPU (`CPU_Interrupts`), a partir das escritas em disco, dos pacotes recebidos pela rede e do uso geral da CPU.
+
+**Utilidade da predição:** entender o quanto disco e rede pressionam o processador. Muitas interrupções indicam sobrecarga de entrada e saída, e prever isso permite agir antes que o desempenho caia.
+
+```{r modelo-interrupcoes-cpu}
+modelo_interrupcoes_cpu <- lm(CPU_Interrupts ~ Disco_Write_Count +
+                                Rede_Pacotes_Recebidos +
+                                UsoCPU_Geral,
+                              data = df_componente)
+
+summary(modelo_interrupcoes_cpu)
+```
+
+# Regressão Linear 4: Concorrência na CPU (Context Switches)
+
+**O que prevê:** a quantidade de trocas de contexto da CPU (`CPU_Ctx_Switches`), a partir da quantidade de processos, dos pacotes recebidos pela rede e da quantidade de threads.
+
+**Utilidade da predição:** medir a concorrência entre processos e threads pelo tempo do processador. Muitas trocas de contexto desperdiçam CPU, e prever esse comportamento ajuda a detectar excesso de processos ou threads e a ajustar a distribuição de carga.
+
+```{r modelo-ctx-switches}
+modelo_ctx_switches <- lm(CPU_Ctx_Switches ~ Qtd_Processos + 
+                            Rede_Pacotes_Recebidos + 
+                            UsoRAM,
+                          data = df_componente)
+
+summary(modelo_ctx_switches)
+```
+
+# Regressão Linear 5: Chamadas de Sistema (Syscalls)
+
+**O que prevê:** o número de chamadas de sistema da CPU (`CPU_Syscalls`), a partir dos bytes recebidos pela rede e da quantidade de processos.
+
+**Utilidade da predição:** estimar a demanda dos programas sobre o sistema operacional. Um aumento incomum de syscalls pode apontar tráfego anormal ou processos fora do padrão, servindo como sinal de monitoramento.
+
+```{r modelo-syscalls}
+modelo_syscalls <- lm(CPU_Syscalls ~
+                        Qtd_Processos +
+                        Disco_Read_Bytes +
+                        UsoRAM,
+                      data = df_componente)
+
+summary(modelo_syscalls)
+```
+
+# Regressão Linear 6: Leitura de Dados do Disco
+
+**O que prevê:** o volume de dados lidos do disco (`Disco_Read_Bytes`), a partir dos bytes recebidos pela rede e da RAM usada.
+
+**Utilidade da predição:** antecipar a demanda de leitura sobre o armazenamento conforme o tráfego de rede e o uso de memória variam, apoiando o planejamento de desempenho do disco.
+
+```{r modelo-leitura-disco}
+modelo_leitura_disco_bytes <- lm(Disco_Read_Bytes ~ Rede_Bytes_Recebidos +
+                                   RAM_Usada,
+                                 data = df_componente)
+
+summary(modelo_leitura_disco_bytes)
+```
+
+# Regressão Linear 7: Memória RAM Livre
+
+**O que prevê:** a quantidade de RAM livre (`RAM_Livre`), a partir das escritas em disco e da quantidade de processos.
+
+**Utilidade da predição:** projetar quanta memória deve restar disponível sob determinada carga, servindo para definir limites de alerta de memória baixa e orientar a ampliação de capacidade do servidor.
+
+```{r modelo-ram-livre}
+modelo_ram_livre <- lm(RAM_Livre ~ Disco_Write_Count +
+                         Qtd_Processos,
+                       data = df_componente)
+
+summary(modelo_ram_livre)
+```
